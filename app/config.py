@@ -26,6 +26,18 @@ def _env_float(name: str, default: float) -> float:
         return default
 
 
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_list(name: str) -> tuple[str, ...]:
+    raw = os.getenv(name, "")
+    return tuple(item.strip().lower() for item in raw.split(",") if item.strip())
+
+
 @dataclass(frozen=True)
 class Settings:
     """Immutable runtime configuration."""
@@ -40,6 +52,9 @@ class Settings:
     llm_max_retries: int
     reports_db: str
     generated_tests_dir: str
+    mount_demo: bool
+    restrict_targets: bool
+    allowed_target_hosts: tuple[str, ...]
 
 
 settings = Settings(
@@ -53,4 +68,11 @@ settings = Settings(
     llm_max_retries=3,
     reports_db=os.getenv("REPORTS_DB", "reports.db"),
     generated_tests_dir=os.getenv("GENERATED_TESTS_DIR", "generated_tests"),
+    # Bundle the demo API in-process at /demo so the deployed Space is a single
+    # self-contained service (the agent needs a target to demonstrate anything).
+    mount_demo=_env_bool("MOUNT_DEMO", True),
+    # On public deployments, lock /analyze to same-host / allowlisted targets so
+    # it can't be abused as an open SSRF proxy or to burn the Groq quota.
+    restrict_targets=_env_bool("AGENT_RESTRICT_TARGETS", False),
+    allowed_target_hosts=_env_list("AGENT_ALLOWED_TARGET_HOSTS"),
 )

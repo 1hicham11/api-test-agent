@@ -9,6 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
 COPY examples ./examples
 
-EXPOSE 8000
+# Hugging Face Spaces expects the app on 7860; PORT overrides it elsewhere.
+EXPOSE 7860
 
-CMD ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "uvicorn app.api.main:app --host 0.0.0.0 --port ${PORT:-7860}"]

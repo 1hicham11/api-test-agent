@@ -17,13 +17,15 @@ import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
+from urllib.parse import urlparse
 
-from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 
 from app.api import storage
 from app.api.home import render_dashboard, render_landing
 from app.api.html_report import render_html, render_pending
+from app.config import settings
 from app.graph.workflow import run_workflow
 from app.models.report import Report
 from app.models.state import AgentState
@@ -47,6 +49,39 @@ app = FastAPI(
     version="0.1.0",
     lifespan=_lifespan,
 )
+
+# Bundle the deliberately-buggy demo API in-process so a single deployed service
+# is self-contained: its spec lives at /demo/openapi.json and its base URL is
+# /demo. Disable with MOUNT_DEMO=0 (e.g. when running the demo as its own server).
+if settings.mount_demo:
+    from app.demo_api.main import app as demo_app
+
+    app.mount("/demo", demo_app)
+
+
+def _ensure_target_allowed(request: Request, url: str, field: str) -> None:
+    """Guard against the public demo being used as an open proxy.
+
+    When AGENT_RESTRICT_TARGETS is on, /analyze may only reach the app's own
+    host (the bundled /demo API) or explicitly allowlisted hosts — otherwise
+    anyone could point it at an arbitrary address or burn the Groq quota.
+    Off by default, so local use stays unrestricted.
+    """
+    if not settings.restrict_targets:
+        return
+    host = (urlparse(url).hostname or "").lower()
+    allowed = {
+        (request.url.hostname or "").lower(),
+        "127.0.0.1",
+        "localhost",
+        *settings.allowed_target_hosts,
+    }
+    if host not in allowed:
+        raise HTTPException(
+            403,
+            f"{field} host {host!r} is not allowed on this public demo; "
+            "it only analyzes the bundled demo API at /demo.",
+        )
 
 
 def _run_analysis(state: AgentState) -> None:
@@ -76,6 +111,7 @@ def dashboard() -> HTMLResponse:
 
 @app.post("/analyze", status_code=202)
 def analyze(
+    request: Request,
     background_tasks: BackgroundTasks,
     target_url: str = Form(..., description="Base URL of the running API under test"),
     spec_url: str | None = Form(None, description="URL of the OpenAPI spec"),
@@ -95,6 +131,11 @@ def analyze(
         raw_spec = content if content.strip() else None
     if not spec_url and raw_spec is None:
         raise HTTPException(422, "provide either spec_url or spec_file")
+
+    # Both target_url and spec_url are fetched server-side, so both are checked.
+    _ensure_target_allowed(request, target_url, "target_url")
+    if spec_url:
+        _ensure_target_allowed(request, spec_url, "spec_url")
 
     parsed_headers: dict[str, str] = {}
     if auth_headers:

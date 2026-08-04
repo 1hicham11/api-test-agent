@@ -1,3 +1,13 @@
+---
+title: API Test Agent
+emoji: 🔍
+colorFrom: indigo
+colorTo: gray
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # API Test Agent
 
 An AI agent that reads an **OpenAPI 3.x spec**, generates realistic test scenarios with an LLM, executes them against your running API, and produces a **coverage & anomaly report** — plus a re-runnable **pytest** suite.
@@ -120,6 +130,9 @@ All settings come from environment variables / `.env` (see [.env.example](.env.e
 | `AGENT_SLOW_THRESHOLD_MS` | `1000` | Latency anomaly threshold |
 | `REPORTS_DB` | `reports.db` | SQLite path |
 | `GENERATED_TESTS_DIR` | `generated_tests` | Where pytest suites are written |
+| `MOUNT_DEMO` | `true` | Bundle the demo API in-process at `/demo` |
+| `AGENT_RESTRICT_TARGETS` | `false` | Lock `/analyze` to same-host / allowlisted targets (set `1` on public deploys) |
+| `AGENT_ALLOWED_TARGET_HOSTS` | — | Extra hosts allowed when `AGENT_RESTRICT_TARGETS=1` (comma-separated) |
 
 **Switching LLM providers:** everything goes through [app/llm.py](app/llm.py) — swap `ChatGroq` for any LangChain chat model (OpenAI, Anthropic, Ollama, …) and nothing else changes. Rate limits (429) are retried with exponential backoff; structured output falls back to raw-JSON parsing when tool-calling fails.
 
@@ -154,15 +167,46 @@ pytest
 
 The unit tests cover the spec-parsing node and the validation/anomaly logic; they need no API key and no network.
 
-## Docker (optional alternative)
+## Deploy (Hugging Face Spaces)
 
-The primary workflow is local (`pip` + `uvicorn`, above). If you prefer containers:
+The agent needs a target to demonstrate anything, so the deployed build bundles
+the buggy demo API **in-process at `/demo`** — one self-contained service. On the
+dashboard, **Use demo target** fills the same-origin `/demo` spec and base URL,
+so a visitor can run a full analysis in one click.
+
+1. Create a new **Docker** Space at [huggingface.co/new-space](https://huggingface.co/new-space).
+2. Push this repo to it (the root `README.md` already carries the Space
+   frontmatter, and Hugging Face builds the `Dockerfile` remotely on port `7860`).
+3. In **Settings → Variables and secrets**, add:
+   - `GROQ_API_KEY` — as a **secret** (never commit it; if it ever landed in a
+     commit, revoke it at [console.groq.com](https://console.groq.com)).
+   - `AGENT_RESTRICT_TARGETS=1` — as a **variable**, so `/analyze` only reaches
+     the bundled `/demo` (see [Security](#security-on-public-deployments)).
+
+> **Note — the SQLite report history is ephemeral.** Spaces reset their
+> filesystem on restart, so past runs (`reports.db`) don't persist. That's fine
+> for a demo — every new analysis works from scratch. For durable history,
+> attach a persistent disk or point `REPORTS_DB` at an external database.
+
+### Security on public deployments
+
+`/analyze` fetches whatever `target_url` / `spec_url` you give it, server-side —
+so a public instance without guards is an open proxy: anyone could aim it at an
+internal address, a third party, or simply burn your Groq quota. Setting
+`AGENT_RESTRICT_TARGETS=1` locks it to the app's own host (the bundled `/demo`)
+plus any hosts in `AGENT_ALLOWED_TARGET_HOSTS`. It's **off by default** so local
+use stays unrestricted.
+
+## Docker (local, optional)
+
+The primary local workflow is `pip` + `uvicorn` (above). If you prefer containers:
 
 ```bash
 docker compose up --build
 ```
 
-This starts the demo API on `:8001` and the agent on `:8000` (reads `GROQ_API_KEY` from your `.env`).
+This runs the agent on `:8000` (reads `GROQ_API_KEY` from your `.env`). The demo
+API is available in-process at `http://127.0.0.1:8000/demo`.
 
 ## License
 

@@ -88,8 +88,9 @@ _LANDING_BODY = """
 _DASHBOARD_SCRIPT = """
 const form = document.getElementById('analyze-form');
 document.getElementById('prefill-demo').addEventListener('click', () => {
-  form.spec_url.value = 'http://127.0.0.1:8001/openapi.json';
-  form.target_url.value = 'http://127.0.0.1:8001';
+  const base = window.location.origin;
+  form.spec_url.value = base + '/demo/openapi.json';
+  form.target_url.value = base + '/demo';
 });
 form.addEventListener('submit', async (event) => {
   event.preventDefault();

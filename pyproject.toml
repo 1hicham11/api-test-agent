@@ -1,0 +1,9 @@
+[project]
+name = "api-test-agent"
+version = "0.1.0"
+description = "AI agent that generates and runs API tests from an OpenAPI spec (LangGraph + FastAPI + pytest)"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

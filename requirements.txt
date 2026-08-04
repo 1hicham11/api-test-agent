@@ -1,0 +1,24 @@
+# Core web framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+
+# Agent workflow
+langgraph==0.2.60
+langchain-core==0.3.29
+langchain-groq==0.2.3
+
+# HTTP client for test execution
+httpx==0.28.1
+
+# Spec parsing & validation
+openapi-spec-validator==0.7.1
+PyYAML==6.0.2
+jsonschema==4.23.0
+
+# Models & config
+pydantic==2.10.4
+python-dotenv==1.0.1
+
+# Testing
+pytest==8.3.4

@@ -1,0 +1,19 @@
+# Environment & secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Runtime artifacts
+reports.db
+generated_tests/
+
+# IDE / tooling
+.idea/
+.vscode/
+.claude/

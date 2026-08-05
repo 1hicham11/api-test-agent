@@ -1,18 +1,10 @@
----
-title: API Test Agent
-emoji: 🔍
-colorFrom: indigo
-colorTo: gray
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 # API Test Agent
 
 An AI agent that reads an **OpenAPI 3.x spec**, generates realistic test scenarios with an LLM, executes them against your running API, and produces a **coverage & anomaly report** — plus a re-runnable **pytest** suite.
 
 Built with **LangGraph**, **FastAPI**, **httpx**, and **pytest**. Works with any OpenAI-compatible provider — **Groq (free) by default**.
+
+**▶️ Live demo: [api-test-agent-65jn.onrender.com](https://api-test-agent-65jn.onrender.com)** — open the dashboard, click **Use demo target**, then **Analyze** to watch the agent find three planted bugs in a live API. *(Free Render instance — the first request after idle takes ~50s to wake up.)*
 
 ## Screenshots
 
@@ -167,26 +159,30 @@ pytest
 
 The unit tests cover the spec-parsing node and the validation/anomaly logic; they need no API key and no network.
 
-## Deploy (Hugging Face Spaces)
+## Deploy (Render, free)
 
 The agent needs a target to demonstrate anything, so the deployed build bundles
 the buggy demo API **in-process at `/demo`** — one self-contained service. On the
 dashboard, **Use demo target** fills the same-origin `/demo` spec and base URL,
 so a visitor can run a full analysis in one click.
 
-1. Create a new **Docker** Space at [huggingface.co/new-space](https://huggingface.co/new-space).
-2. Push this repo to it (the root `README.md` already carries the Space
-   frontmatter, and Hugging Face builds the `Dockerfile` remotely on port `7860`).
-3. In **Settings → Variables and secrets**, add:
-   - `GROQ_API_KEY` — as a **secret** (never commit it; if it ever landed in a
-     commit, revoke it at [console.groq.com](https://console.groq.com)).
-   - `AGENT_RESTRICT_TARGETS=1` — as a **variable**, so `/analyze` only reaches
-     the bundled `/demo` (see [Security](#security-on-public-deployments)).
+This repo ships a [`render.yaml`](render.yaml) Blueprint, so deployment is:
 
-> **Note — the SQLite report history is ephemeral.** Spaces reset their
-> filesystem on restart, so past runs (`reports.db`) don't persist. That's fine
-> for a demo — every new analysis works from scratch. For durable history,
-> attach a persistent disk or point `REPORTS_DB` at an external database.
+1. On [render.com](https://render.com) → **New → Blueprint** → connect this repo.
+2. Render reads `render.yaml` and builds the `Dockerfile` (it binds `$PORT`
+   automatically).
+3. When prompted, paste your `GROQ_API_KEY` (kept out of the repo via
+   `sync: false`). `AGENT_RESTRICT_TARGETS=1` is set by the Blueprint so
+   `/analyze` only reaches the bundled `/demo` (see
+   [Security](#security-on-public-deployments)).
+
+The same image runs anywhere that builds a `Dockerfile` (Cloud Run, Fly, a VPS) —
+`${PORT:-7860}` adapts to the platform's port.
+
+> **Note — the SQLite report history is ephemeral.** Free instances reset their
+> filesystem on restart/redeploy, so past runs (`reports.db`) don't persist.
+> That's fine for a demo — every new analysis works from scratch. For durable
+> history, attach a persistent disk or point `REPORTS_DB` at an external database.
 
 ### Security on public deployments
 

@@ -4,14 +4,25 @@ An AI agent that reads an **OpenAPI 3.x spec**, generates realistic test scenari
 
 Built with **LangGraph**, **FastAPI**, **httpx**, and **pytest**. Works with any OpenAI-compatible provider — **Groq (free) by default**.
 
-**▶️ Live demo: [api-test-agent-65jn.onrender.com](https://api-test-agent-65jn.onrender.com)** — open the dashboard, click **Use demo target**, then **Analyze** to watch the agent find three planted bugs in a live API. *(Free Render instance — the first request after idle takes ~50s to wake up.)*
+**▶️ Live demo: [api-test-agent-65jn.onrender.com](https://api-test-agent-65jn.onrender.com)** **(free Render instance — the first request after idle takes ~50s to wake up)** — open the dashboard, click **Use demo target**, then **Analyze** to watch the agent find three planted bugs in a live API.
 
 ## Screenshots
 
-|  |  |
-|---|---|
-| **Landing**<br/>![Landing page](docs/screenshots/landing.png) | **Dashboard — run an analysis**<br/>![Dashboard](docs/screenshots/dashboard.png) |
-| **Analysis running (auto-refresh)**<br/>![Analysis running](docs/screenshots/running.png) | **Report — ranked anomalies**<br/>![Report](docs/screenshots/report.png) |
+**Landing**
+
+![Landing page](docs/screenshots/landing.png)
+
+**Dashboard — run an analysis**
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+**Analysis running (auto-refresh)**
+
+![Analysis running](docs/screenshots/running.png)
+
+**Report — ranked anomalies**
+
+![Report](docs/screenshots/report.png)
 
 ## What it finds
 
@@ -207,4 +218,3 @@ API is available in-process at `http://127.0.0.1:8000/demo`.
 ## License
 
 MIT
-"# api-test-agent" 

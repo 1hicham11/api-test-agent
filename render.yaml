@@ -1,0 +1,19 @@
+# Render Blueprint — deploys the agent as a single Docker web service.
+# The bundled demo API lives in-process at /demo, so this one service is a
+# self-contained live demo. See the README's deploy section.
+services:
+  - type: web
+    name: api-test-agent
+    runtime: docker
+    plan: free
+    region: frankfurt          # closest free region; change if you prefer
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      # Lock /analyze to the app's own host (the bundled /demo) so the public
+      # instance can't be used as an open proxy or to burn the Groq quota.
+      - key: AGENT_RESTRICT_TARGETS
+        value: "1"
+      # Set this in the Render dashboard — never committed to the repo.
+      - key: GROQ_API_KEY
+        sync: false
